@@ -32,11 +32,6 @@ type tWaitItem struct {
     port      int
     timeoutUs int64
     req       []uint8
-    timeStart int64
-    // 上次发送时间.用于重传
-    lastTxTime int64
-    retryNum   int
-    code       int
 
     dstIA uint64
     rid   int
@@ -87,7 +82,6 @@ func CallAsync(port int, dstIA uint64, rid int, timeout int, req []uint8) *Resp 
     item.port = port
     item.timeoutUs = int64(timeout) * 1000
     item.req = req
-    item.timeStart = time.Now().Unix()
 
     item.dstIA = dstIA
     item.rid = rid

@@ -7,7 +7,6 @@ package dcom
 import (
     "container/list"
     "gitee.com/jdhxyy/crc16"
-    "gitee.com/jdhxyy/lagan"
     "sync"
     "time"
 )
@@ -43,7 +42,7 @@ func gThreadBlockRxRun() {
 }
 
 func sendAllBackFrame() {
-    now := time.Now().Unix()
+    now := gGetTime()
     interval := int64(gParam.BlockRetryInterval) * 1000
 
     node := blockRxItems.Front()
@@ -61,8 +60,6 @@ func sendAllBackFrame() {
                 break
             }
             if item.retryNums > gParam.BlockRetryMaxNum {
-                lagan.Debug(Tag, "remove block node because retry num too many.0x%x rid:%d token:%d", item.srcIA,
-                    item.frame.controlWord.rid, item.frame.controlWord.token)
                 blockRxItems.Remove(node)
                 break
             }
@@ -90,7 +87,7 @@ func sendBackFrame(item *tBlockRxItem) {
     gSend(item.port, item.srcIA, &frame)
 
     item.retryNums++
-    item.lastTxTime = time.Now().Unix()
+    item.lastTxTime = gGetTime()
 }
 
 // gBlockRxSetCallback 设置接收回调函数

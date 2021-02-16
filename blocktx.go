@@ -34,28 +34,30 @@ var blockTxItemsMutex sync.Mutex
 
 // gThreadBlockTxRun 块传输发送模块运行线程
 func gThreadBlockTxRun() {
-    blockTxItemsMutex.Lock()
-
-    node := blockTxItems.Front()
-    var nextNode *list.Element
     for {
-        if node == nil {
-            break
+        blockTxItemsMutex.Lock()
+
+        node := blockTxItems.Front()
+        var nextNode *list.Element
+        for {
+            if node == nil {
+                break
+            }
+            nextNode = node.Next()
+            checkTimeoutAndRetrySendFirstFrame(node)
+            node = nextNode
         }
-        nextNode = node.Next()
-        checkTimeoutAndRetrySendFirstFrame(node)
-        node = nextNode
+
+        blockTxItemsMutex.Unlock()
+
+        time.Sleep(gInterval)
     }
-
-    blockTxItemsMutex.Unlock()
-
-    time.Sleep(gInterval)
 }
 
 // checkTimeoutAndRetrySendFirstFrame 检查超时节点和重发首帧
 func checkTimeoutAndRetrySendFirstFrame(node *list.Element) {
     item := node.Value.(*tBlockTxItem)
-    now := time.Now().Unix()
+    now := gGetTime()
     if item.isFirstFrame == false {
         // 非首帧
         if now-item.lastRxAckTime > int64(gParam.BlockRetryInterval*gParam.BlockRetryMaxNum*1000) {
@@ -69,7 +71,7 @@ func checkTimeoutAndRetrySendFirstFrame(node *list.Element) {
         return
     }
 
-    if item.firstFrameRetryNum > gParam.BlockRetryMaxNum {
+    if item.firstFrameRetryNum >= gParam.BlockRetryMaxNum {
         blockTxItems.Remove(node)
     } else {
         blockTxSendFrame(item, 0)
@@ -110,8 +112,8 @@ func gBlockTx(port int, dstIA uint64, code int, rid int, token int, data []uint8
     item := blockTxCreateItem(port, dstIA, code, rid, token, data)
     blockTxSendFrame(item, 0)
     item.firstFrameRetryNum++
-    item.firstFrameRetryTime = time.Now().Unix()
-    blockTxItems.PushBack(&item)
+    item.firstFrameRetryTime = gGetTime()
+    blockTxItems.PushBack(item)
 }
 
 func blockTxIsNodeExist(port int, dstIA uint64, code int, rid int, token int) bool {
@@ -143,7 +145,7 @@ func blockTxCreateItem(port int, dstIA uint64, code int, rid int, token int, dat
 
     item.isFirstFrame = true
     item.firstFrameRetryNum = 0
-    now := time.Now().Unix()
+    now := gGetTime()
     item.firstFrameRetryTime = now
     item.lastRxAckTime = now
     return &item
@@ -190,7 +192,7 @@ func checkNodeAndDealBackFrame(port int, srcIA uint64, frame *tFrame, node *list
     if item.isFirstFrame {
         item.isFirstFrame = false
     }
-    item.lastRxAckTime = time.Now().Unix()
+    item.lastRxAckTime = gGetTime()
 
     blockTxSendFrame(item, startOffset)
     return true

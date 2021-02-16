@@ -4,6 +4,8 @@
 
 package dcom
 
+import "time"
+
 const Tag = "dcom"
 
 var tokenValue = 0
@@ -135,4 +137,9 @@ func gByetsToBlockFrame(bytes []uint8) *tBlockFrame {
     frame.blockHeader = *blockHeader
     frame.payload = append(frame.payload, bytes[gControlWordLen+gBlockHeaderLen:word.payloadLen-gBlockHeaderLen]...)
     return &frame
+}
+
+// gGetTime 获取当前时间.单位:us
+func gGetTime() int64 {
+    return time.Now().UnixNano() / 1000
 }
