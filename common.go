@@ -42,7 +42,7 @@ func gBytesToControlWord(bytes []uint8) *tControlWord {
     word.code = int((bytes[0] >> 5) & 0x7)
     word.blockFlag = int((bytes[0] >> 4) & 0x1)
     word.rid = int((bytes[0]&0xf)<<6) + int((bytes[1]>>2)&0x3f)
-    word.token = int(bytes[1]&0x3) + int(bytes[2])
+    word.token = (int(bytes[1]&0x3) << 8) + int(bytes[2])
     word.payloadLen = int(bytes[3])
     return &word
 }
@@ -62,7 +62,7 @@ func gByetsToFrame(bytes []uint8) *tFrame {
     if word == nil {
         return nil
     }
-    if len(bytes) < gControlWordLen + word.payloadLen {
+    if len(bytes) < gControlWordLen+word.payloadLen {
         return nil
     }
 
@@ -98,11 +98,11 @@ func gBytesToBlockHeader(bytes []uint8) *tBlocHeader {
     }
     var header tBlocHeader
     j := 0
-    header.crc16 = uint16((bytes[j] << 8) + bytes[j+1])
+    header.crc16 = (uint16(bytes[j]) << 8) + uint16(bytes[j+1])
     j += 2
-    header.total = int((bytes[j] << 8) + bytes[j+1])
+    header.total = (int(bytes[j]) << 8) + int(bytes[j+1])
     j += 2
-    header.offset = int((bytes[j] << 8) + bytes[j+1])
+    header.offset = (int(bytes[j]) << 8) + int(bytes[j+1])
     j += 2
     return &header
 }
@@ -123,7 +123,7 @@ func gByetsToBlockFrame(bytes []uint8) *tBlockFrame {
     if word == nil {
         return nil
     }
-    if len(bytes) < gControlWordLen + word.payloadLen || word.payloadLen < gBlockHeaderLen {
+    if len(bytes) < gControlWordLen+word.payloadLen || word.payloadLen < gBlockHeaderLen {
         return nil
     }
 
@@ -135,7 +135,7 @@ func gByetsToBlockFrame(bytes []uint8) *tBlockFrame {
     var frame tBlockFrame
     frame.controlWord = *word
     frame.blockHeader = *blockHeader
-    frame.payload = append(frame.payload, bytes[gControlWordLen+gBlockHeaderLen:word.payloadLen-gBlockHeaderLen]...)
+    frame.payload = append(frame.payload, bytes[gControlWordLen+gBlockHeaderLen:gControlWordLen+word.payloadLen]...)
     return &frame
 }
 

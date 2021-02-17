@@ -28,6 +28,7 @@ func gRxCon(port int, srcIA uint64, frame *tFrame) {
     ackFrame.controlWord.code = gCodeAck
     ackFrame.controlWord.blockFlag = 0
     ackFrame.controlWord.rid = frame.controlWord.rid
+    ackFrame.controlWord.token = frame.controlWord.token
     ackFrame.controlWord.payloadLen = len(resp)
     ackFrame.payload = append(ackFrame.payload, resp...)
     gSend(port, srcIA, &ackFrame)

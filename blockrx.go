@@ -82,6 +82,7 @@ func sendBackFrame(item *tBlockRxItem) {
     frame.controlWord.rid = item.frame.controlWord.rid
     frame.controlWord.token = item.frame.controlWord.token
     frame.controlWord.payloadLen = 2
+    frame.payload = make([]uint8, 2)
     frame.payload[0] = uint8(item.blockHeader.offset >> 8)
     frame.payload[1] = uint8(item.blockHeader.offset)
     gSend(item.port, item.srcIA, &frame)
