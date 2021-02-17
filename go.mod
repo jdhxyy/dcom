@@ -1,4 +1,4 @@
-module gitee.com/jdhxyy/dcom.git
+module gitee.com/jdhxyy/dcom
 
 go 1.12
 
