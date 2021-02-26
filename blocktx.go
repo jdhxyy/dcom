@@ -1,4 +1,4 @@
-// Copyright 2021-2021 The TZIOT Authors. All rights reserved.
+// Copyright 2021-2021 The jdh99 Authors. All rights reserved.
 // 块传输发送模块
 // Authors: jdh99 <jdh821@163.com>
 
