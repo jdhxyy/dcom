@@ -13,9 +13,10 @@ import (
 
 // tBlockRecvFunc 块传输接收函数类型
 // 注意载荷实际长度不是frame载荷长度字段
-type tBlockRecvFunc func(port int, srcIA uint64, frame *tFrame)
+type tBlockRecvFunc func(protocol int, port int, srcIA uint64, frame *tFrame)
 
 type tBlockRxItem struct {
+	protocol    int
 	port        int
 	srcIA       uint64
 	frame       tFrame
@@ -85,7 +86,7 @@ func sendBackFrame(item *tBlockRxItem) {
 	frame.payload = make([]uint8, 2)
 	frame.payload[0] = uint8(item.blockHeader.offset >> 8)
 	frame.payload[1] = uint8(item.blockHeader.offset)
-	gSend(item.port, item.srcIA, &frame)
+	gSend(item.protocol, item.port, item.srcIA, &frame)
 
 	item.retryNums++
 	item.lastTxTime = gGetTime()
@@ -97,19 +98,19 @@ func gBlockRxSetCallback(recvFunc tBlockRecvFunc) {
 }
 
 // gBlockRxReceive 块传输接收数据
-func gBlockRxReceive(port int, srcIA uint64, frame *tBlockFrame) {
+func gBlockRxReceive(protocol int, port int, srcIA uint64, frame *tBlockFrame) {
 	blockRxItemsMutex.Lock()
 	defer blockRxItemsMutex.Unlock()
 
-	node := getNodeBlockRxItems(port, srcIA, frame)
+	node := getNodeBlockRxItems(protocol, port, srcIA, frame)
 	if node == nil {
-		createAndAppendNodeBlockRxItems(port, srcIA, frame)
+		createAndAppendNodeBlockRxItems(protocol, port, srcIA, frame)
 	} else {
-		editNodeBlockRxItems(port, node, frame)
+		editNodeBlockRxItems(protocol, port, node, frame)
 	}
 }
 
-func getNodeBlockRxItems(port int, srcIA uint64, frame *tBlockFrame) *list.Element {
+func getNodeBlockRxItems(protocol int, port int, srcIA uint64, frame *tBlockFrame) *list.Element {
 	node := blockRxItems.Front()
 	var item *tBlockRxItem
 
@@ -118,7 +119,7 @@ func getNodeBlockRxItems(port int, srcIA uint64, frame *tBlockFrame) *list.Eleme
 			break
 		}
 		item = node.Value.(*tBlockRxItem)
-		if item.port == port && item.srcIA == srcIA &&
+		if item.protocol == protocol && item.port == port && item.srcIA == srcIA &&
 			item.frame.controlWord.token == frame.controlWord.token &&
 			item.frame.controlWord.rid == frame.controlWord.rid &&
 			item.frame.controlWord.code == frame.controlWord.code {
@@ -129,9 +130,10 @@ func getNodeBlockRxItems(port int, srcIA uint64, frame *tBlockFrame) *list.Eleme
 	return nil
 }
 
-func createAndAppendNodeBlockRxItems(port int, srcIA uint64, frame *tBlockFrame) {
+func createAndAppendNodeBlockRxItems(protocol int, port int, srcIA uint64, frame *tBlockFrame) {
 	if frame.blockHeader.offset != 0 {
-		gSendRstFrame(port, srcIA, SystemErrorWrongBlockOffset, frame.controlWord.rid, frame.controlWord.token)
+		gSendRstFrame(protocol, port, srcIA, SystemErrorWrongBlockOffset, frame.controlWord.rid,
+			frame.controlWord.token)
 		return
 	}
 
@@ -146,9 +148,9 @@ func createAndAppendNodeBlockRxItems(port int, srcIA uint64, frame *tBlockFrame)
 	sendBackFrame(&item)
 }
 
-func editNodeBlockRxItems(port int, node *list.Element, frame *tBlockFrame) {
+func editNodeBlockRxItems(protocol int, port int, node *list.Element, frame *tBlockFrame) {
 	item := node.Value.(*tBlockRxItem)
-	if item.blockHeader.offset != frame.blockHeader.offset || item.port != port {
+	if item.blockHeader.offset != frame.blockHeader.offset || item.protocol != protocol || item.port != port {
 		return
 	}
 
@@ -165,14 +167,14 @@ func editNodeBlockRxItems(port int, node *list.Element, frame *tBlockFrame) {
 			return
 		}
 		if blockRecv != nil {
-			blockRecv(item.port, item.srcIA, &item.frame)
+			blockRecv(item.protocol, item.port, item.srcIA, &item.frame)
 		}
 		blockRxItems.Remove(node)
 	}
 }
 
 // gBlockRxDealRstFrame 块传输接收模块处理复位连接帧
-func gBlockRxDealRstFrame(port int, srcIA uint64, frame *tFrame) {
+func gBlockRxDealRstFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
 	node := blockRxItems.Front()
 	var item *tBlockRxItem
 
@@ -181,7 +183,7 @@ func gBlockRxDealRstFrame(port int, srcIA uint64, frame *tFrame) {
 			break
 		}
 		item = node.Value.(*tBlockRxItem)
-		if item.port == port && item.srcIA == srcIA &&
+		if item.protocol == protocol && item.port == port && item.srcIA == srcIA &&
 			item.frame.controlWord.token == frame.controlWord.token &&
 			item.frame.controlWord.rid == frame.controlWord.rid {
 			blockRxItems.Remove(node)

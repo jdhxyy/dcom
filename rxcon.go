@@ -5,8 +5,8 @@
 package dcom
 
 // gRxCon 接收到连接帧时处理函数
-func gRxCon(port int, srcIA uint64, frame *tFrame) {
-	resp, err := gCallback(frame.controlWord.rid, frame.payload)
+func gRxCon(protocol int, port int, srcIA uint64, frame *tFrame) {
+	resp, err := gCallback(protocol, frame.controlWord.rid, frame.payload)
 
 	// NON不需要应答
 	if frame.controlWord.code == gCodeNon {
@@ -14,13 +14,13 @@ func gRxCon(port int, srcIA uint64, frame *tFrame) {
 	}
 
 	if err != SystemOK {
-		gSendRstFrame(port, srcIA, err, frame.controlWord.rid, frame.controlWord.token)
+		gSendRstFrame(protocol, port, srcIA, err, frame.controlWord.rid, frame.controlWord.token)
 		return
 	}
 
 	if len(resp) > gSingleFrameSizeMax {
 		// 长度过长启动块传输
-		gBlockTx(port, srcIA, gCodeAck, frame.controlWord.rid, frame.controlWord.token, resp)
+		gBlockTx(protocol, port, srcIA, gCodeAck, frame.controlWord.rid, frame.controlWord.token, resp)
 		return
 	}
 
@@ -31,5 +31,5 @@ func gRxCon(port int, srcIA uint64, frame *tFrame) {
 	ackFrame.controlWord.token = frame.controlWord.token
 	ackFrame.controlWord.payloadLen = len(resp)
 	ackFrame.payload = append(ackFrame.payload, resp...)
-	gSend(port, srcIA, &ackFrame)
+	gSend(protocol, port, srcIA, &ackFrame)
 }

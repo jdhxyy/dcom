@@ -92,7 +92,7 @@ type tBlockFrame struct {
 type IsAllowSendFuncByPortFunc func(port int) bool
 
 // SendByPortFunc 向指定端口发送函数类型
-type SendByPortFunc func(port int, dstIA uint64, bytes []uint8)
+type SendByPortFunc func(protocol int, port int, dstIA uint64, bytes []uint8)
 
 // LoadParam 载入参数
 type LoadParam struct {

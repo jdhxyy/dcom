@@ -11,12 +11,14 @@ type CallbackFunc func(req []uint8) ([]uint8, ErrorCode)
 var services = make(map[int]CallbackFunc)
 
 // Register 注册服务回调函数
-func Register(rid int, callback CallbackFunc) {
+func Register(protocol int, rid int, callback CallbackFunc) {
+	rid += protocol << 16
 	services[rid] = callback
 }
 
 // gCallback 回调资源号rid对应的函数
-func gCallback(rid int, req []uint8) ([]uint8, ErrorCode) {
+func gCallback(protocol int, rid int, req []uint8) ([]uint8, ErrorCode) {
+	rid += protocol << 16
 	v, ok := services[rid]
 	if ok == false {
 		return nil, SystemErrorInvalidRid

@@ -29,6 +29,7 @@ type tWaitItem struct {
 	resp *Resp
 	end  chan bool
 
+	protocol  int
 	port      int
 	timeoutUs int64
 	req       []uint8
@@ -44,8 +45,8 @@ var waitItemsMutex sync.Mutex
 // Call RPC同步调用
 // timeout是超时时间,单位:ms.为0表示不需要应答
 // 返回值是应答字节流和错误码.错误码非SystemOK表示调用失败
-func Call(port int, dstIA uint64, rid int, timeout int, req []uint8) ([]uint8, ErrorCode) {
-	resp := CallAsync(port, dstIA, rid, timeout, req)
+func Call(protocol int, port int, dstIA uint64, rid int, timeout int, req []uint8) ([]uint8, ErrorCode) {
+	resp := CallAsync(protocol, port, dstIA, rid, timeout, req)
 	<-resp.Done
 	return resp.Bytes, resp.Error
 }
@@ -53,7 +54,7 @@ func Call(port int, dstIA uint64, rid int, timeout int, req []uint8) ([]uint8, E
 // CallAsync RPC异步调用
 // timeout是超时时间,单位:ms.为0表示不需要应答
 // 返回值中错误码非SystemOK表示调用失败
-func CallAsync(port int, dstIA uint64, rid int, timeout int, req []uint8) *Resp {
+func CallAsync(protocol int, port int, dstIA uint64, rid int, timeout int, req []uint8) *Resp {
 	var resp Resp
 	resp.Done = make(chan *Resp, 10)
 
@@ -63,7 +64,7 @@ func CallAsync(port int, dstIA uint64, rid int, timeout int, req []uint8) *Resp 
 	}
 
 	token := gGetToken()
-	waitlistSendFrame(port, dstIA, code, rid, token, req)
+	waitlistSendFrame(protocol, port, dstIA, code, rid, token, req)
 
 	if code == gCodeNon {
 		resp.Error = SystemOK
@@ -101,9 +102,9 @@ func CallAsync(port int, dstIA uint64, rid int, timeout int, req []uint8) *Resp 
 	return &resp
 }
 
-func waitlistSendFrame(port int, dstIA uint64, code int, rid int, token int, data []uint8) {
+func waitlistSendFrame(protocol int, port int, dstIA uint64, code int, rid int, token int, data []uint8) {
 	if len(data) >= gSingleFrameSizeMax {
-		gBlockTx(port, dstIA, code, rid, token, data)
+		gBlockTx(protocol, port, dstIA, code, rid, token, data)
 		return
 	}
 
@@ -114,11 +115,11 @@ func waitlistSendFrame(port int, dstIA uint64, code int, rid int, token int, dat
 	frame.controlWord.token = token
 	frame.controlWord.payloadLen = len(data)
 	frame.payload = append(frame.payload, data...)
-	gSend(port, dstIA, &frame)
+	gSend(protocol, port, dstIA, &frame)
 }
 
 // gRxAckFrame 接收到ACK帧时处理函数
-func gRxAckFrame(port int, srcIA uint64, frame *tFrame) {
+func gRxAckFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
 	waitItemsMutex.Lock()
 	defer waitItemsMutex.Unlock()
 
@@ -129,16 +130,16 @@ func gRxAckFrame(port int, srcIA uint64, frame *tFrame) {
 			break
 		}
 		nodeNext = node.Next()
-		if checkNodeAndDealAckFrame(port, srcIA, frame, node) {
+		if checkNodeAndDealAckFrame(protocol, port, srcIA, frame, node) {
 			break
 		}
 		node = nodeNext
 	}
 }
 
-func checkNodeAndDealAckFrame(port int, srcIA uint64, frame *tFrame, node *list.Element) bool {
+func checkNodeAndDealAckFrame(protocol int, port int, srcIA uint64, frame *tFrame, node *list.Element) bool {
 	item := node.Value.(*tWaitItem)
-	if item.port != port || item.dstIA != srcIA || item.rid != frame.controlWord.rid ||
+	if item.protocol != protocol || item.port != port || item.dstIA != srcIA || item.rid != frame.controlWord.rid ||
 		item.token != frame.controlWord.token {
 		return false
 	}
@@ -151,7 +152,7 @@ func checkNodeAndDealAckFrame(port int, srcIA uint64, frame *tFrame, node *list.
 }
 
 // gRxRstFrame 接收到RST帧时处理函数
-func gRxRstFrame(port int, srcIA uint64, frame *tFrame) {
+func gRxRstFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
 	waitItemsMutex.Lock()
 	defer waitItemsMutex.Unlock()
 
@@ -162,7 +163,7 @@ func gRxRstFrame(port int, srcIA uint64, frame *tFrame) {
 			break
 		}
 		nodeNext = node.Next()
-		if dealRstFrame(port, srcIA, frame, node) {
+		if dealRstFrame(protocol, port, srcIA, frame, node) {
 			break
 		}
 		node = nodeNext
@@ -171,9 +172,9 @@ func gRxRstFrame(port int, srcIA uint64, frame *tFrame) {
 
 // dealRstFrame 处理复位连接帧
 // 返回true表示节点符合条件
-func dealRstFrame(port int, srcIA uint64, frame *tFrame, node *list.Element) bool {
+func dealRstFrame(protocol int, port int, srcIA uint64, frame *tFrame, node *list.Element) bool {
 	item := node.Value.(*tWaitItem)
-	if item.port != port || item.dstIA != srcIA || item.rid != frame.controlWord.rid ||
+	if item.protocol != protocol || item.port != port || item.dstIA != srcIA || item.rid != frame.controlWord.rid ||
 		item.token != frame.controlWord.token {
 		return false
 	}

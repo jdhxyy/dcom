@@ -9,26 +9,26 @@ func gRxLoad() {
 	gBlockRxSetCallback(dealRecv)
 }
 
-func dealRecv(port int, srcIA uint64, frame *tFrame) {
+func dealRecv(protocol int, port int, srcIA uint64, frame *tFrame) {
 	if frame.controlWord.code == gCodeCon || frame.controlWord.code == gCodeNon {
-		gRxCon(port, srcIA, frame)
+		gRxCon(protocol, port, srcIA, frame)
 		return
 	}
 	if frame.controlWord.code == gCodeAck {
-		gRxAckFrame(port, srcIA, frame)
+		gRxAckFrame(protocol, port, srcIA, frame)
 		return
 	}
 	if frame.controlWord.code == gCodeBack {
-		gBlockRxBackFrame(port, srcIA, frame)
+		gBlockRxBackFrame(protocol, port, srcIA, frame)
 		return
 	}
 	if frame.controlWord.code == gCodeRst {
 		if len(frame.payload) != 1 || frame.controlWord.payloadLen != 1 {
 			return
 		}
-		gRxRstFrame(port, srcIA, frame)
-		gBlockRxDealRstFrame(port, srcIA, frame)
-		gBlockTxDealRstFrame(port, srcIA, frame)
+		gRxRstFrame(protocol, port, srcIA, frame)
+		gBlockRxDealRstFrame(protocol, port, srcIA, frame)
+		gBlockTxDealRstFrame(protocol, port, srcIA, frame)
 		return
 	}
 }
@@ -36,19 +36,19 @@ func dealRecv(port int, srcIA uint64, frame *tFrame) {
 // Receive 接收数据
 // 应用模块接收到数据后需调用本函数
 // 本函数接收帧的格式为DCOM协议数据
-func Receive(port int, srcIA uint64, bytes []uint8) {
+func Receive(protocol int, port int, srcIA uint64, bytes []uint8) {
 	frame := gByetsToFrame(bytes)
 	if frame == nil {
 		return
 	}
 
 	if frame.controlWord.blockFlag == 0 {
-		dealRecv(port, srcIA, frame)
+		dealRecv(protocol, port, srcIA, frame)
 	} else {
 		blockFrame := gByetsToBlockFrame(bytes)
 		if blockFrame == nil {
 			return
 		}
-		gBlockRxReceive(port, srcIA, blockFrame)
+		gBlockRxReceive(protocol, port, srcIA, blockFrame)
 	}
 }

@@ -23,7 +23,7 @@ func gGetToken() int {
 // gControlWordToBytes 控制字转换为字节流.字节流是大端顺序
 func gControlWordToBytes(word *tControlWord) []uint8 {
 	var value uint32
-	value = uint32(word.code<<29) + uint32(word.blockFlag<<28) + uint32(word.rid<<18) + uint32(word.token<<8) +
+	value = (uint32(word.code) << 29) + (uint32(word.blockFlag) << 28) + (uint32(word.rid) << 18) + (uint32(word.token) << 8) +
 		uint32(word.payloadLen)
 	bytes := make([]uint8, 4)
 	bytes[0] = uint8(value >> 24)

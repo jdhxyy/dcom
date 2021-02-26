@@ -5,23 +5,23 @@
 package dcom
 
 // gSend 发送数据
-func gSend(port int, dstIA uint64, frame *tFrame) {
+func gSend(protocol int, port int, dstIA uint64, frame *tFrame) {
 	if frame == nil || gParam.IsAllowSend(port) == false {
 		return
 	}
-	gParam.Send(port, dstIA, gFrameToBytes(frame))
+	gParam.Send(protocol, port, dstIA, gFrameToBytes(frame))
 }
 
 // gBlockSend 块传输发送数据
-func gBlockSend(port int, dstIA uint64, frame *tBlockFrame) {
+func gBlockSend(protocol int, port int, dstIA uint64, frame *tBlockFrame) {
 	if frame == nil || gParam.IsAllowSend(port) == false {
 		return
 	}
-	gParam.Send(port, dstIA, gBlockFrameToBytes(frame))
+	gParam.Send(protocol, port, dstIA, gBlockFrameToBytes(frame))
 }
 
 // gSendRstFrame 发送错误码
-func gSendRstFrame(port int, dstIA uint64, errorCode ErrorCode, rid int, token int) {
+func gSendRstFrame(protocol int, port int, dstIA uint64, errorCode ErrorCode, rid int, token int) {
 	var frame tFrame
 	frame.controlWord.code = gCodeRst
 	frame.controlWord.blockFlag = 0
@@ -30,5 +30,5 @@ func gSendRstFrame(port int, dstIA uint64, errorCode ErrorCode, rid int, token i
 	frame.controlWord.payloadLen = 1
 	frame.payload = make([]uint8, 1)
 	frame.payload[0] = uint8(errorCode) | 0x80
-	gSend(port, dstIA, &frame)
+	gSend(protocol, port, dstIA, &frame)
 }
