@@ -6,7 +6,7 @@ package dcom
 
 import (
 	"container/list"
-	"gitee.com/jdhxyy/crc16"
+	"github.com/jdhxyy/crc16"
 	"sync"
 	"time"
 )
