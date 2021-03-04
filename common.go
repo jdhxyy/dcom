@@ -55,9 +55,9 @@ func gFrameToBytes(frame *tFrame) []uint8 {
 	return bytes
 }
 
-// gByetsToFrame 字节流转换为帧.字节流是大端顺序
+// gBytesToFrame 字节流转换为帧.字节流是大端顺序
 // 转换失败返回nil
-func gByetsToFrame(bytes []uint8) *tFrame {
+func gBytesToFrame(bytes []uint8) *tFrame {
 	var word = gBytesToControlWord(bytes)
 	if word == nil {
 		return nil

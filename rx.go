@@ -37,7 +37,7 @@ func dealRecv(protocol int, port int, srcIA uint64, frame *tFrame) {
 // 应用模块接收到数据后需调用本函数
 // 本函数接收帧的格式为DCOM协议数据
 func Receive(protocol int, port int, srcIA uint64, bytes []uint8) {
-	frame := gByetsToFrame(bytes)
+	frame := gBytesToFrame(bytes)
 	if frame == nil {
 		return
 	}
