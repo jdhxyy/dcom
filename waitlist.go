@@ -12,7 +12,7 @@ import (
 
 // Resp 异步调用应答
 type Resp struct {
-	Error ErrorCode
+	Error int
 	Bytes []uint8
 	Done  chan *Resp
 }
@@ -45,7 +45,7 @@ var waitItemsMutex sync.Mutex
 // Call RPC同步调用
 // timeout是超时时间,单位:ms.为0表示不需要应答
 // 返回值是应答字节流和错误码.错误码非SystemOK表示调用失败
-func Call(protocol int, port uint64, dstIA uint64, rid int, timeout int, req []uint8) ([]uint8, ErrorCode) {
+func Call(protocol int, port uint64, dstIA uint64, rid int, timeout int, req []uint8) ([]uint8, int) {
 	resp := CallAsync(protocol, port, dstIA, rid, timeout, req)
 	<-resp.Done
 	return resp.Bytes, resp.Error
@@ -178,7 +178,7 @@ func dealRstFrame(protocol int, port uint64, srcIA uint64, frame *tFrame, node *
 		item.token != frame.controlWord.token {
 		return false
 	}
-	err := ErrorCode(frame.payload[0])
+	err := int(frame.payload[0])
 	item.resp.Error = err
 	item.end <- true
 	waitItems.Remove(node)

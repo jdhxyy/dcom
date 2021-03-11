@@ -15,26 +15,23 @@ const (
 	Version = "1.0"
 )
 
-// 系统错误码
-type ErrorCode int
-
 const (
 	// 正确值
-	SystemOK ErrorCode = 0
+	SystemOK = 0
 	// 接收超时
-	SystemErrorRxTimeout ErrorCode = 0x10
+	SystemErrorRxTimeout = 0x10
 	// 发送超时
-	SystemErrorTxTimeout ErrorCode = 0x11
+	SystemErrorTxTimeout = 0x11
 	// 内存不足
-	SystemErrorNotEnoughMemory ErrorCode = 0x12
+	SystemErrorNotEnoughMemory = 0x12
 	// 没有对应的资源ID
-	SystemErrorInvalidRid ErrorCode = 0x13
+	SystemErrorInvalidRid = 0x13
 	// 块传输校验错误
-	SystemErrorWrongBlockCheck ErrorCode = 0x14
+	SystemErrorWrongBlockCheck = 0x14
 	// 块传输偏移地址错误
-	SystemErrorWrongBlockOffset ErrorCode = 0x15
+	SystemErrorWrongBlockOffset = 0x15
 	// 参数错误
-	SystemErrorParamInvalid ErrorCode = 0x16
+	SystemErrorParamInvalid = 0x16
 )
 
 // 模块内参数

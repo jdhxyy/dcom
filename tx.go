@@ -21,7 +21,7 @@ func gBlockSend(protocol int, port uint64, dstIA uint64, frame *tBlockFrame) {
 }
 
 // gSendRstFrame 发送错误码
-func gSendRstFrame(protocol int, port uint64, dstIA uint64, errorCode ErrorCode, rid int, token int) {
+func gSendRstFrame(protocol int, port uint64, dstIA uint64, errorCode int, rid int, token int) {
 	var frame tFrame
 	frame.controlWord.code = gCodeRst
 	frame.controlWord.blockFlag = 0
