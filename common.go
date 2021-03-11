@@ -5,6 +5,7 @@
 package dcom
 
 import (
+	"net"
 	"time"
 )
 
@@ -148,21 +149,22 @@ func gGetTime() int64 {
 
 // AddrToPort 网络地址转换为端口号
 // 转换规则为网络端口+ip地址.大端排列
-func AddrToPort(netIP [4]uint8, netPort int) uint64 {
+func AddrToPort(addr *net.UDPAddr) uint64 {
 	var port uint64
-	port = (uint64(netIP[0]) << 24) + (uint64(netIP[1]) << 16) + (uint64(netIP[2]) << 8) + uint64(netIP[3])
-	port |= (((uint64(netPort) >> 8) & 0xff) << 40) + (((uint64(netPort)) & 0xff) << 32)
+	port = (uint64(addr.IP.To4()[0]) << 24) + (uint64(addr.IP.To4()[1]) << 16) + (uint64(addr.IP.To4()[2]) << 8) +
+		uint64(addr.IP.To4()[3])
+	port |= (((uint64(addr.Port) >> 8) & 0xff) << 40) + (((uint64(addr.Port)) & 0xff) << 32)
 	return port
 }
 
 // PortToAddr 端口号转换为网络地址
 // 转换规则为网络端口+ip地址.大端排列
-func PortToAddr(port uint64) (netIP [4]uint8, netPort int) {
+func PortToAddr(port uint64) *net.UDPAddr {
+	netIP := make([]uint8, 4)
 	netIP[0] = uint8(port >> 24)
 	netIP[1] = uint8(port >> 16)
 	netIP[2] = uint8(port >> 8)
 	netIP[3] = uint8(port)
-
-	netPort = int(port>>32) & 0xffff
-	return netIP, netPort
+	netPort := int(port>>32) & 0xffff
+	return &net.UDPAddr{IP: netIP, Port: netPort}
 }

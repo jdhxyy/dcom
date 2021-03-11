@@ -2,6 +2,7 @@ package dcom
 
 import (
 	"fmt"
+	"net"
 	"testing"
 )
 
@@ -114,7 +115,7 @@ func testSend1(protocol int, port uint64, dstIA uint64, bytes []uint8) {
 }
 
 func TestCase8(t *testing.T) {
-	port := AddrToPort([4]uint8{1, 2, 3, 4}, 5678)
+	port := AddrToPort(&net.UDPAddr{IP: []uint8{1, 2, 3, 4}, Port: 5678})
 	fmt.Printf("0x%x\n", port)
 	fmt.Println(PortToAddr(port))
 }
