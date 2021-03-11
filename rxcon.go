@@ -5,8 +5,8 @@
 package dcom
 
 // gRxCon 接收到连接帧时处理函数
-func gRxCon(protocol int, port int, srcIA uint64, frame *tFrame) {
-	resp, err := gCallback(protocol, srcIA, frame.controlWord.rid, frame.payload)
+func gRxCon(protocol int, port uint64, srcIA uint64, frame *tFrame) {
+	resp, err := gCallback(protocol, port, srcIA, frame.controlWord.rid, frame.payload)
 
 	// NON不需要应答
 	if frame.controlWord.code == gCodeNon {

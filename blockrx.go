@@ -13,11 +13,11 @@ import (
 
 // tBlockRecvFunc 块传输接收函数类型
 // 注意载荷实际长度不是frame载荷长度字段
-type tBlockRecvFunc func(protocol int, port int, srcIA uint64, frame *tFrame)
+type tBlockRecvFunc func(protocol int, port uint64, srcIA uint64, frame *tFrame)
 
 type tBlockRxItem struct {
 	protocol    int
-	port        int
+	port        uint64
 	srcIA       uint64
 	frame       tFrame
 	blockHeader tBlocHeader
@@ -98,7 +98,7 @@ func gBlockRxSetCallback(recvFunc tBlockRecvFunc) {
 }
 
 // gBlockRxReceive 块传输接收数据
-func gBlockRxReceive(protocol int, port int, srcIA uint64, frame *tBlockFrame) {
+func gBlockRxReceive(protocol int, port uint64, srcIA uint64, frame *tBlockFrame) {
 	blockRxItemsMutex.Lock()
 	defer blockRxItemsMutex.Unlock()
 
@@ -110,7 +110,7 @@ func gBlockRxReceive(protocol int, port int, srcIA uint64, frame *tBlockFrame) {
 	}
 }
 
-func getNodeBlockRxItems(protocol int, port int, srcIA uint64, frame *tBlockFrame) *list.Element {
+func getNodeBlockRxItems(protocol int, port uint64, srcIA uint64, frame *tBlockFrame) *list.Element {
 	node := blockRxItems.Front()
 	var item *tBlockRxItem
 
@@ -130,7 +130,7 @@ func getNodeBlockRxItems(protocol int, port int, srcIA uint64, frame *tBlockFram
 	return nil
 }
 
-func createAndAppendNodeBlockRxItems(protocol int, port int, srcIA uint64, frame *tBlockFrame) {
+func createAndAppendNodeBlockRxItems(protocol int, port uint64, srcIA uint64, frame *tBlockFrame) {
 	if frame.blockHeader.offset != 0 {
 		gSendRstFrame(protocol, port, srcIA, SystemErrorWrongBlockOffset, frame.controlWord.rid,
 			frame.controlWord.token)
@@ -148,7 +148,7 @@ func createAndAppendNodeBlockRxItems(protocol int, port int, srcIA uint64, frame
 	sendBackFrame(&item)
 }
 
-func editNodeBlockRxItems(protocol int, port int, node *list.Element, frame *tBlockFrame) {
+func editNodeBlockRxItems(protocol int, port uint64, node *list.Element, frame *tBlockFrame) {
 	item := node.Value.(*tBlockRxItem)
 	if item.blockHeader.offset != frame.blockHeader.offset || item.protocol != protocol || item.port != port {
 		return
@@ -174,7 +174,7 @@ func editNodeBlockRxItems(protocol int, port int, node *list.Element, frame *tBl
 }
 
 // gBlockRxDealRstFrame 块传输接收模块处理复位连接帧
-func gBlockRxDealRstFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
+func gBlockRxDealRstFrame(protocol int, port uint64, srcIA uint64, frame *tFrame) {
 	node := blockRxItems.Front()
 	var item *tBlockRxItem
 

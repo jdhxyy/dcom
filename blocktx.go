@@ -13,7 +13,7 @@ import (
 
 type tBlockTxItem struct {
 	protocol int
-	port     int
+	port     uint64
 	dstIA    uint64
 	code     int
 	rid      int
@@ -102,7 +102,7 @@ func blockTxSendFrame(item *tBlockTxItem, offset int) {
 }
 
 // gBlockTx 块传输发送
-func gBlockTx(protocol int, port int, dstIA uint64, code int, rid int, token int, data []uint8) {
+func gBlockTx(protocol int, port uint64, dstIA uint64, code int, rid int, token int, data []uint8) {
 	if len(data) < gSingleFrameSizeMax {
 		return
 	}
@@ -117,7 +117,7 @@ func gBlockTx(protocol int, port int, dstIA uint64, code int, rid int, token int
 	blockTxItems.PushBack(item)
 }
 
-func blockTxIsNodeExist(protocol int, port int, dstIA uint64, code int, rid int, token int) bool {
+func blockTxIsNodeExist(protocol int, port uint64, dstIA uint64, code int, rid int, token int) bool {
 	node := blockTxItems.Front()
 	var item *tBlockTxItem
 	for {
@@ -136,7 +136,7 @@ func blockTxIsNodeExist(protocol int, port int, dstIA uint64, code int, rid int,
 	return false
 }
 
-func blockTxCreateItem(protocol int, port int, dstIA uint64, code int, rid int, token int, data []uint8) *tBlockTxItem {
+func blockTxCreateItem(protocol int, port uint64, dstIA uint64, code int, rid int, token int, data []uint8) *tBlockTxItem {
 	var item tBlockTxItem
 	item.protocol = protocol
 	item.port = port
@@ -156,7 +156,7 @@ func blockTxCreateItem(protocol int, port int, dstIA uint64, code int, rid int, 
 }
 
 // gBlockRxBackFrame 接收到BACK帧时处理函数
-func gBlockRxBackFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
+func gBlockRxBackFrame(protocol int, port uint64, srcIA uint64, frame *tFrame) {
 	if frame.controlWord.code != gCodeBack {
 		return
 	}
@@ -177,7 +177,7 @@ func gBlockRxBackFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
 
 // checkNodeAndDealBackFrame 检查节点是否符合条件,符合则处理BACK帧
 // 返回true表示节点符合条件
-func checkNodeAndDealBackFrame(protocol int, port int, srcIA uint64, frame *tFrame, node *list.Element) bool {
+func checkNodeAndDealBackFrame(protocol int, port uint64, srcIA uint64, frame *tFrame, node *list.Element) bool {
 	item := node.Value.(*tBlockTxItem)
 
 	if item.protocol != protocol || item.port != port || item.dstIA != srcIA || item.rid != frame.controlWord.rid ||
@@ -203,7 +203,7 @@ func checkNodeAndDealBackFrame(protocol int, port int, srcIA uint64, frame *tFra
 }
 
 // gBlockTxDealRstFrame 块传输发送模块处理复位连接帧
-func gBlockTxDealRstFrame(protocol int, port int, srcIA uint64, frame *tFrame) {
+func gBlockTxDealRstFrame(protocol int, port uint64, srcIA uint64, frame *tFrame) {
 	node := blockTxItems.Front()
 	var item *tBlockTxItem
 	for {

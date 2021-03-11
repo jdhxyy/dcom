@@ -9,7 +9,7 @@ func gRxLoad() {
 	gBlockRxSetCallback(dealRecv)
 }
 
-func dealRecv(protocol int, port int, srcIA uint64, frame *tFrame) {
+func dealRecv(protocol int, port uint64, srcIA uint64, frame *tFrame) {
 	if frame.controlWord.code == gCodeCon || frame.controlWord.code == gCodeNon {
 		gRxCon(protocol, port, srcIA, frame)
 		return
@@ -36,7 +36,7 @@ func dealRecv(protocol int, port int, srcIA uint64, frame *tFrame) {
 // Receive 接收数据
 // 应用模块接收到数据后需调用本函数
 // 本函数接收帧的格式为DCOM协议数据
-func Receive(protocol int, port int, srcIA uint64, bytes []uint8) {
+func Receive(protocol int, port uint64, srcIA uint64, bytes []uint8) {
 	frame := gBytesToFrame(bytes)
 	if frame == nil {
 		return

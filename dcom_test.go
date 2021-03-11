@@ -21,11 +21,11 @@ func testLoad() {
 	Load(&param)
 }
 
-func testIsAllowSend(port int) bool {
+func testIsAllowSend(port uint64) bool {
 	return true
 }
 
-func testSend(protocol int, port int, dstIA uint64, bytes []uint8) {
+func testSend(protocol int, port uint64, dstIA uint64, bytes []uint8) {
 	fmt.Printf("protocol:%d dstIA:%x, port:%d send:", protocol, dstIA, port)
 	testPrintHex(bytes)
 }
@@ -96,7 +96,7 @@ func testLoad1() {
 	Load(&param)
 }
 
-func testSend1(protocol int, port int, dstIA uint64, bytes []uint8) {
+func testSend1(protocol int, port uint64, dstIA uint64, bytes []uint8) {
 	fmt.Printf("dstIA:%x, port:%d send:", dstIA, port)
 	testPrintHex(bytes)
 
@@ -111,4 +111,10 @@ func testSend1(protocol int, port int, dstIA uint64, bytes []uint8) {
 	arr = append(arr, 0x4)
 	arr = append(arr, 0x5)
 	Receive(protocol, port, dstIA, arr)
+}
+
+func TestCase8(t *testing.T) {
+	port := AddrToPort([4]uint8{1, 2, 3, 4}, 5678)
+	fmt.Printf("0x%x\n", port)
+	fmt.Println(PortToAddr(port))
 }

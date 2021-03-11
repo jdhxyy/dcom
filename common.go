@@ -4,7 +4,9 @@
 
 package dcom
 
-import "time"
+import (
+	"time"
+)
 
 const Tag = "dcom"
 
@@ -142,4 +144,25 @@ func gByetsToBlockFrame(bytes []uint8) *tBlockFrame {
 // gGetTime 获取当前时间.单位:us
 func gGetTime() int64 {
 	return time.Now().UnixNano() / 1000
+}
+
+// AddrToPort 网络地址转换为端口号
+// 转换规则为网络端口+ip地址.大端排列
+func AddrToPort(netIP [4]uint8, netPort int) uint64 {
+	var port uint64
+	port = (uint64(netIP[0]) << 24) + (uint64(netIP[1]) << 16) + (uint64(netIP[2]) << 8) + uint64(netIP[3])
+	port |= (((uint64(netPort) >> 8) & 0xff) << 40) + (((uint64(netPort)) & 0xff) << 32)
+	return port
+}
+
+// PortToAddr 端口号转换为网络地址
+// 转换规则为网络端口+ip地址.大端排列
+func PortToAddr(port uint64) (netIP [4]uint8, netPort int) {
+	netIP[0] = uint8(port >> 24)
+	netIP[1] = uint8(port >> 16)
+	netIP[2] = uint8(port >> 8)
+	netIP[3] = uint8(port)
+
+	netPort = int(port>>32) & 0xffff
+	return netIP, netPort
 }

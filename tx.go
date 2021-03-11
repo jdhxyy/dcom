@@ -5,7 +5,7 @@
 package dcom
 
 // gSend 发送数据
-func gSend(protocol int, port int, dstIA uint64, frame *tFrame) {
+func gSend(protocol int, port uint64, dstIA uint64, frame *tFrame) {
 	if frame == nil || gParam.IsAllowSend(port) == false {
 		return
 	}
@@ -13,7 +13,7 @@ func gSend(protocol int, port int, dstIA uint64, frame *tFrame) {
 }
 
 // gBlockSend 块传输发送数据
-func gBlockSend(protocol int, port int, dstIA uint64, frame *tBlockFrame) {
+func gBlockSend(protocol int, port uint64, dstIA uint64, frame *tBlockFrame) {
 	if frame == nil || gParam.IsAllowSend(port) == false {
 		return
 	}
@@ -21,7 +21,7 @@ func gBlockSend(protocol int, port int, dstIA uint64, frame *tBlockFrame) {
 }
 
 // gSendRstFrame 发送错误码
-func gSendRstFrame(protocol int, port int, dstIA uint64, errorCode ErrorCode, rid int, token int) {
+func gSendRstFrame(protocol int, port uint64, dstIA uint64, errorCode ErrorCode, rid int, token int) {
 	var frame tFrame
 	frame.controlWord.code = gCodeRst
 	frame.controlWord.blockFlag = 0
