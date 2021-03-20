@@ -22,12 +22,12 @@ func testLoad() {
 	Load(&param)
 }
 
-func testIsAllowSend(port uint64) bool {
+func testIsAllowSend(pipe uint64) bool {
 	return true
 }
 
-func testSend(protocol int, port uint64, dstIA uint64, bytes []uint8) {
-	fmt.Printf("protocol:%d dstIA:%x, port:%d send:", protocol, dstIA, port)
+func testSend(protocol int, pipe uint64, dstIA uint64, bytes []uint8) {
+	fmt.Printf("protocol:%d dstIA:%x, pipe:%d send:", protocol, dstIA, pipe)
 	testPrintHex(bytes)
 }
 
@@ -97,8 +97,8 @@ func testLoad1() {
 	Load(&param)
 }
 
-func testSend1(protocol int, port uint64, dstIA uint64, bytes []uint8) {
-	fmt.Printf("dstIA:%x, port:%d send:", dstIA, port)
+func testSend1(protocol int, pipe uint64, dstIA uint64, bytes []uint8) {
+	fmt.Printf("dstIA:%x, pipe:%d send:", dstIA, pipe)
 	testPrintHex(bytes)
 
 	var arr []uint8
@@ -111,11 +111,11 @@ func testSend1(protocol int, port uint64, dstIA uint64, bytes []uint8) {
 	arr = append(arr, 0x3)
 	arr = append(arr, 0x4)
 	arr = append(arr, 0x5)
-	Receive(protocol, port, dstIA, arr)
+	Receive(protocol, pipe, dstIA, arr)
 }
 
 func TestCase8(t *testing.T) {
-	port := AddrToPort(&net.UDPAddr{IP: []uint8{1, 2, 3, 4}, Port: 5678})
-	fmt.Printf("0x%x\n", port)
-	fmt.Println(PortToAddr(port))
+	pipe := AddrToPipe(&net.UDPAddr{IP: []uint8{1, 2, 3, 4}, Port: 5678})
+	fmt.Printf("0x%x\n", pipe)
+	fmt.Println(PipeToAddr(pipe))
 }
