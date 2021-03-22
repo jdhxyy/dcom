@@ -87,7 +87,7 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 	item.dstIA = dstIA
 	item.rid = rid
 	item.token = token
-	waitItems.PushBack(&item)
+	elem := waitItems.PushBack(&item)
 
 	// 等待数据
 	go func() {
@@ -98,6 +98,10 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 			item.resp.Error = SystemErrorRxTimeout
 			item.resp.done()
 		}
+
+		waitItemsMutex.Lock()
+		waitItems.Remove(elem)
+		waitItemsMutex.Unlock()
 	}()
 	return &resp
 }
