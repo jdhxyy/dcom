@@ -1,4 +1,4 @@
 github.com/jdhxyy/crc16 v0.0.0-20210228220550-7713e2f73123 h1:A3y5GyayKrpj+4EwUnvb8VucRShsbX4PDXlcRzTRunQ=
 github.com/jdhxyy/crc16 v0.0.0-20210228220550-7713e2f73123/go.mod h1:Bn2AQAKww6qAfp1Grz+AK2cnYKB/9a2WOcfkidTAWJQ=
-github.com/jdhxyy/lagan v0.0.0-20210322230334-4da1f9fa3831 h1:ZRe735b3O8djiZdE4wC+Ck97o/fZANlQxV0227h758o=
-github.com/jdhxyy/lagan v0.0.0-20210322230334-4da1f9fa3831/go.mod h1:thKkxhIW5/LKfiKOzNj/X+BU4LmlEZHRZPwT/EVFwqg=
+github.com/jdhxyy/lagan v0.0.0-20210323233702-bfbc48dadbe7 h1:VwVfRlq6q3aEyNwV7XhyR29v4r0hUAjBaUpXFcaZCEQ=
+github.com/jdhxyy/lagan v0.0.0-20210323233702-bfbc48dadbe7/go.mod h1:thKkxhIW5/LKfiKOzNj/X+BU4LmlEZHRZPwT/EVFwqg=
