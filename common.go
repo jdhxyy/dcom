@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const Tag = "dcom"
-
 var tokenValue = 0
 
 // gGetToken 获取token

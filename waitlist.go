@@ -46,8 +46,10 @@ var waitItemsMutex sync.Mutex
 // timeout是超时时间,单位:ms.为0表示不需要应答
 // 返回值是应答字节流和错误码.错误码非SystemOK表示调用失败
 func Call(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, req []uint8) ([]uint8, int) {
+	logInfo("call.protocol:%d pipe:0x%x dst ia:0x%x rid:%d timeout:%d", protocol, pipe, dstIA, rid, timeout)
 	resp := CallAsync(protocol, pipe, dstIA, rid, timeout, req)
 	<-resp.Done
+	logInfo("call resp.result:%d len:%d", resp.Error, len(resp.Bytes))
 	return resp.Bytes, resp.Error
 }
 
@@ -64,6 +66,8 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 	}
 
 	token := gGetToken()
+	logInfo("call async.token:%d protocol:%d pipe:0x%x dst ia:0x%x rid:%d timeout:%d", token, protocol, pipe,
+		dstIA, rid, timeout)
 	waitlistSendFrame(protocol, pipe, dstIA, code, rid, token, req)
 
 	if code == gCodeNon {
@@ -95,6 +99,7 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 		case <-item.end:
 			item.resp.done()
 		case <-time.After(time.Duration(timeout) * time.Millisecond):
+			logWarn("wait ack timeout!token:%d", token)
 			item.resp.Error = SystemErrorRxTimeout
 			item.resp.done()
 		}
@@ -119,6 +124,7 @@ func waitlistSendFrame(protocol int, pipe uint64, dstIA uint64, code int, rid in
 	frame.controlWord.token = token
 	frame.controlWord.payloadLen = len(data)
 	frame.payload = append(frame.payload, data...)
+	logInfo("send frame.token:%d", token)
 	gSend(protocol, pipe, dstIA, &frame)
 }
 
@@ -127,6 +133,7 @@ func gRxAckFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
 	waitItemsMutex.Lock()
 	defer waitItemsMutex.Unlock()
 
+	logInfo("rx ack frame.src ia:0x%x", srcIA)
 	node := waitItems.Front()
 	var nodeNext *list.Element
 	for {
@@ -148,6 +155,7 @@ func checkNodeAndDealAckFrame(protocol int, pipe uint64, srcIA uint64, frame *tF
 		return false
 	}
 
+	logInfo("deal ack frame.token:%d", item.token)
 	item.resp.Bytes = append(item.resp.Bytes, frame.payload...)
 	item.resp.Error = SystemOK
 	item.end <- true
@@ -160,6 +168,7 @@ func gRxRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
 	waitItemsMutex.Lock()
 	defer waitItemsMutex.Unlock()
 
+	logWarn("rx rst frame.src ia:0x%x", srcIA)
 	node := waitItems.Front()
 	var nodeNext *list.Element
 	for {
@@ -183,6 +192,7 @@ func dealRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame, node *
 		return false
 	}
 	err := int(frame.payload[0])
+	logWarn("deal rst frame.token:%d result:0x%x", item.token, err)
 	item.resp.Error = err
 	item.end <- true
 	waitItems.Remove(node)

@@ -10,6 +10,7 @@ func gRxLoad() {
 }
 
 func dealRecv(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
+	logInfo("receive data.token:%d code:%d src ia:0x%x", frame.controlWord.token, frame.controlWord.code, srcIA)
 	if frame.controlWord.code == gCodeCon || frame.controlWord.code == gCodeNon {
 		gRxCon(protocol, pipe, srcIA, frame)
 		return
@@ -39,6 +40,7 @@ func dealRecv(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
 func Receive(protocol int, pipe uint64, srcIA uint64, bytes []uint8) {
 	frame := gBytesToFrame(bytes)
 	if frame == nil {
+		logWarn("receive data error:bytes to frame failed.src ia:0x%x", srcIA)
 		return
 	}
 
@@ -47,6 +49,7 @@ func Receive(protocol int, pipe uint64, srcIA uint64, bytes []uint8) {
 	} else {
 		blockFrame := gByetsToBlockFrame(bytes)
 		if blockFrame == nil {
+			logWarn("receive data error:bytes to block frame failed.src ia:0x%x", srcIA)
 			return
 		}
 		gBlockRxReceive(protocol, pipe, srcIA, blockFrame)
