@@ -84,7 +84,7 @@ func retrySend(node *list.Element) {
 	if t-item.startTime > item.timeoutUs {
 		logWarn("wait ack timeout!task failed!token:%d", item.token)
 		waitItems.Remove(node)
-		if len(item.req) >= gSingleFrameSizeMax {
+		if len(item.req) > gSingleFrameSizeMax {
 			gBlockRemove(item.protocol, item.pipe, item.dstIA, item.code, item.rid, item.token)
 		}
 		item.resp.Error = SystemErrorRxTimeout
@@ -93,7 +93,7 @@ func retrySend(node *list.Element) {
 	}
 
 	// 块传输不用此处重传.块传输模块自己负责
-	if len(item.req) >= gSingleFrameSizeMax {
+	if len(item.req) > gSingleFrameSizeMax {
 		return
 	}
 
@@ -169,7 +169,10 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 	item.retryNum = 0
 	item.startTime = gGetTime()
 	item.lastRetryTimestamp = gGetTime()
+
+	waitItemsMutex.Lock()
 	waitItems.PushBack(&item)
+	waitItemsMutex.Unlock()
 
 	// 等待数据
 	go func() {
@@ -182,7 +185,7 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 }
 
 func waitlistSendFrame(protocol int, pipe uint64, dstIA uint64, code int, rid int, token int, data []uint8) {
-	if len(data) >= gSingleFrameSizeMax {
+	if len(data) > gSingleFrameSizeMax {
 		gBlockTx(protocol, pipe, dstIA, code, rid, token, data)
 		return
 	}

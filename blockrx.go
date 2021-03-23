@@ -61,6 +61,7 @@ func sendAllBackFrame() {
 				break
 			}
 			if item.retryNums > gParam.BlockRetryMaxNum {
+				logWarn("block rx send back retry num too many!token:%d", item.frame.controlWord.token)
 				blockRxItems.Remove(node)
 				break
 			}
@@ -68,6 +69,7 @@ func sendAllBackFrame() {
 			if gParam.IsAllowSend(item.pipe) == false {
 				break
 			}
+			logWarn("block rx send back retry num:%d token:%d", item.retryNums, item.frame.controlWord.token)
 			sendBackFrame(item)
 			break
 		}
@@ -77,6 +79,7 @@ func sendAllBackFrame() {
 }
 
 func sendBackFrame(item *tBlockRxItem) {
+	logInfo("block rx send back frame.token:%d offset:%d", item.frame.controlWord.token, item.blockHeader.offset)
 	var frame tFrame
 	frame.controlWord.code = gCodeBack
 	frame.controlWord.blockFlag = 0
@@ -102,6 +105,7 @@ func gBlockRxReceive(protocol int, pipe uint64, srcIA uint64, frame *tBlockFrame
 	blockRxItemsMutex.Lock()
 	defer blockRxItemsMutex.Unlock()
 
+	logInfo("block rx receive.token:%d src_ia:0x%x", frame.controlWord.token, srcIA)
 	node := getNodeBlockRxItems(protocol, pipe, srcIA, frame)
 	if node == nil {
 		createAndAppendNodeBlockRxItems(protocol, pipe, srcIA, frame)
@@ -132,6 +136,8 @@ func getNodeBlockRxItems(protocol int, pipe uint64, srcIA uint64, frame *tBlockF
 
 func createAndAppendNodeBlockRxItems(protocol int, pipe uint64, srcIA uint64, frame *tBlockFrame) {
 	if frame.blockHeader.offset != 0 {
+		logWarn("block rx create and append item failed!offset is not 0:%d.token:%d send rst",
+			frame.blockHeader.offset, frame.controlWord.token)
 		gSendRstFrame(protocol, pipe, srcIA, SystemErrorWrongBlockOffset, frame.controlWord.rid,
 			frame.controlWord.token)
 		return
@@ -151,6 +157,9 @@ func createAndAppendNodeBlockRxItems(protocol int, pipe uint64, srcIA uint64, fr
 func editNodeBlockRxItems(protocol int, pipe uint64, node *list.Element, frame *tBlockFrame) {
 	item := node.Value.(*tBlockRxItem)
 	if item.blockHeader.offset != frame.blockHeader.offset || item.protocol != protocol || item.pipe != pipe {
+		logWarn("block rx edit item failed!token:%d.item<->frame:offset:%d %d,protocol:%d %d,pipe:%d %d",
+			frame.controlWord.token, item.blockHeader.offset, frame.blockHeader.offset, item.protocol, protocol,
+			item.pipe, pipe)
 		return
 	}
 
@@ -161,8 +170,11 @@ func editNodeBlockRxItems(protocol int, pipe uint64, node *list.Element, frame *
 	sendBackFrame(item)
 
 	if item.blockHeader.offset >= item.blockHeader.total {
+		logInfo("block rx receive end.token:%d", item.frame.controlWord.token)
 		crcCalc := crc16.Checksum(item.frame.payload)
 		if crcCalc != item.blockHeader.crc16 {
+			logWarn("block rx crc is wrong.token:%d crc calc:0x%x get:0x%x", item.frame.controlWord.token, crcCalc,
+				item.blockHeader.crc16)
 			blockRxItems.Remove(node)
 			return
 		}
@@ -186,6 +198,7 @@ func gBlockRxDealRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame
 		if item.protocol == protocol && item.pipe == pipe && item.srcIA == srcIA &&
 			item.frame.controlWord.token == frame.controlWord.token &&
 			item.frame.controlWord.rid == frame.controlWord.rid {
+			logWarn("block rx rst.token:%d", item.frame.controlWord.token)
 			blockRxItems.Remove(node)
 			return
 		}

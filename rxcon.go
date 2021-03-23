@@ -6,6 +6,7 @@ package dcom
 
 // gRxCon 接收到连接帧时处理函数
 func gRxCon(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
+	logInfo("rx con.token:%d", frame.controlWord.token)
 	resp, err := gCallback(protocol, pipe, srcIA, frame.controlWord.rid, frame.payload)
 
 	// NON不需要应答
@@ -14,12 +15,14 @@ func gRxCon(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
 	}
 
 	if err != SystemOK {
+		logInfo("service send err:0x%x token:%d", err, frame.controlWord.token)
 		gSendRstFrame(protocol, pipe, srcIA, err, frame.controlWord.rid, frame.controlWord.token)
 		return
 	}
 
 	if len(resp) > gSingleFrameSizeMax {
 		// 长度过长启动块传输
+		logInfo("service send too long:%d.start block tx.token:%d", len(resp), frame.controlWord.token)
 		gBlockTx(protocol, pipe, srcIA, gCodeAck, frame.controlWord.rid, frame.controlWord.token, resp)
 		return
 	}

@@ -62,6 +62,7 @@ func checkTimeoutAndRetrySendFirstFrame(node *list.Element) {
 	if item.isFirstFrame == false {
 		// 非首帧
 		if now-item.lastRxAckTime > int64(gParam.BlockRetryInterval*gParam.BlockRetryMaxNum*1000) {
+			logWarn("block tx timeout!remove task.token:%d", item.token)
 			blockTxItems.Remove(node)
 		}
 		return
@@ -73,15 +74,18 @@ func checkTimeoutAndRetrySendFirstFrame(node *list.Element) {
 	}
 
 	if item.firstFrameRetryNum >= gParam.BlockRetryMaxNum {
+		logWarn("block tx timeout!first frame send retry too many.token:%d", item.token)
 		blockTxItems.Remove(node)
 	} else {
-		blockTxSendFrame(item, 0)
 		item.firstFrameRetryNum++
 		item.firstFrameRetryTime = now
+		logInfo("block tx send first frame.token:%d retry num:%d", item.token, item.firstFrameRetryNum)
+		blockTxSendFrame(item, 0)
 	}
 }
 
 func blockTxSendFrame(item *tBlockTxItem, offset int) {
+	logInfo("block tx send.token:%d offset:%d", item.token, offset)
 	delta := len(item.data) - offset
 	payloadLen := gSingleFrameSizeMax - gBlockHeaderLen
 	if payloadLen > delta {
@@ -103,7 +107,7 @@ func blockTxSendFrame(item *tBlockTxItem, offset int) {
 
 // gBlockTx 块传输发送
 func gBlockTx(protocol int, pipe uint64, dstIA uint64, code int, rid int, token int, data []uint8) {
-	if len(data) < gSingleFrameSizeMax {
+	if len(data) <= gSingleFrameSizeMax {
 		return
 	}
 
@@ -114,6 +118,7 @@ func gBlockTx(protocol int, pipe uint64, dstIA uint64, code int, rid int, token 
 		return
 	}
 
+	logInfo("block tx new task.token:%d dst ia:0x%x code:%d rid:%d", token, dstIA, code, rid)
 	item := blockTxCreateItem(protocol, pipe, dstIA, code, rid, token, data)
 	blockTxSendFrame(item, 0)
 	item.firstFrameRetryNum++
@@ -190,11 +195,16 @@ func checkNodeAndDealBackFrame(protocol int, pipe uint64, srcIA uint64, frame *t
 		item.token != frame.controlWord.token {
 		return false
 	}
+	logInfo("block tx receive back.token:%d", item.token)
 	if frame.controlWord.payloadLen != 2 {
+		logWarn("block rx receive back deal failed!token:%d payload len is wrong:%d", item.token,
+			frame.controlWord.payloadLen)
 		return false
 	}
 	startOffset := (int(frame.payload[0]) << 8) + int(frame.payload[1])
 	if startOffset >= len(item.data) {
+		logWarn("block rx receive back deal failed!token:%d start offset:%d > data len:%d", item.token, startOffset,
+			len(item.data))
 		blockTxItems.Remove(node)
 		return true
 	}
@@ -223,6 +233,7 @@ func gBlockTxDealRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame
 		item = node.Value.(*tBlockTxItem)
 		if item.protocol == protocol && item.pipe == pipe && item.dstIA == srcIA && item.rid == frame.controlWord.rid &&
 			item.token == frame.controlWord.token {
+			logWarn("block tx receive rst.token:%d", item.token)
 			blockTxItems.Remove(node)
 			return
 		}
@@ -246,6 +257,7 @@ func gBlockRemove(protocol int, pipe uint64, dstIA uint64, code int, rid int, to
 
 		if item.protocol == protocol && item.pipe == pipe && item.dstIA == dstIA && item.code == code &&
 			item.rid == rid && item.token == token {
+			logWarn("block tx remove task.token:%d", item.token)
 			blockTxItems.Remove(node)
 			break
 		}
