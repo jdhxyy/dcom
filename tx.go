@@ -33,7 +33,8 @@ func gBlockSend(protocol int, pipe uint64, dstIA uint64, frame *tBlockFrame) {
 
 // gSendRstFrame 发送错误码
 func gSendRstFrame(protocol int, pipe uint64, dstIA uint64, errorCode int, rid int, token int) {
-	logWarn("send rst frame!token:%d protocol:%d pipe:0x%x dst ia:0x%x", token, protocol, pipe, dstIA)
+	logInfo("send rst frame:0x%x!token:%d protocol:%d pipe:0x%x dst ia:0x%x", errorCode, token, protocol, pipe,
+		dstIA)
 	var frame tFrame
 	frame.controlWord.code = gCodeRst
 	frame.controlWord.blockFlag = 0
