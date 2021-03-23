@@ -106,6 +106,10 @@ func gBlockTx(protocol int, pipe uint64, dstIA uint64, code int, rid int, token 
 	if len(data) < gSingleFrameSizeMax {
 		return
 	}
+
+	blockTxItemsMutex.Lock()
+	defer blockTxItemsMutex.Unlock()
+
 	if blockTxIsNodeExist(protocol, pipe, dstIA, code, rid, token) {
 		return
 	}
@@ -127,8 +131,7 @@ func blockTxIsNodeExist(protocol int, pipe uint64, dstIA uint64, code int, rid i
 		item = node.Value.(*tBlockTxItem)
 
 		if item.protocol == protocol && item.pipe == pipe && item.dstIA == dstIA && item.code == code &&
-			item.rid == rid && item.
-			token == token {
+			item.rid == rid && item.token == token {
 			return true
 		}
 		node = node.Next()
@@ -160,6 +163,9 @@ func gBlockRxBackFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
 	if frame.controlWord.code != gCodeBack {
 		return
 	}
+
+	blockTxItemsMutex.Lock()
+	defer blockTxItemsMutex.Unlock()
 
 	node := blockTxItems.Front()
 	var nextNode *list.Element
@@ -204,6 +210,9 @@ func checkNodeAndDealBackFrame(protocol int, pipe uint64, srcIA uint64, frame *t
 
 // gBlockTxDealRstFrame 块传输发送模块处理复位连接帧
 func gBlockTxDealRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame) {
+	blockTxItemsMutex.Lock()
+	defer blockTxItemsMutex.Unlock()
+
 	node := blockTxItems.Front()
 	var item *tBlockTxItem
 	for {
@@ -218,6 +227,28 @@ func gBlockTxDealRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame
 			return
 		}
 
+		node = node.Next()
+	}
+}
+
+// gBlockRemove 块传输发送移除任务
+func gBlockRemove(protocol int, pipe uint64, dstIA uint64, code int, rid int, token int) {
+	blockTxItemsMutex.Lock()
+	defer blockTxItemsMutex.Unlock()
+
+	node := blockTxItems.Front()
+	var item *tBlockTxItem
+	for {
+		if node == nil {
+			break
+		}
+		item = node.Value.(*tBlockTxItem)
+
+		if item.protocol == protocol && item.pipe == pipe && item.dstIA == dstIA && item.code == code &&
+			item.rid == rid && item.token == token {
+			blockTxItems.Remove(node)
+			break
+		}
 		node = node.Next()
 	}
 }

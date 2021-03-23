@@ -37,10 +37,82 @@ type tWaitItem struct {
 	dstIA uint64
 	rid   int
 	token int
+
+	// 启动时间.单位:us.用于判断是否超过总超时
+	startTime int64
+	// 上次发送时间戳.单位:us.用于重传
+	lastRetryTimestamp int64
+	retryNum           int
+	code               int
 }
 
 var waitItems list.List
 var waitItemsMutex sync.Mutex
+
+func init() {
+	go checkWaitItemsThread()
+}
+
+// checkWaitItems 检查等待列表线程
+// 检查项有重发,超时等
+func checkWaitItemsThread() {
+	for {
+		checkWaitItems()
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func checkWaitItems() {
+	waitItemsMutex.Lock()
+	defer waitItemsMutex.Unlock()
+
+	node := waitItems.Front()
+	var nodeNext *list.Element
+	for {
+		if node == nil {
+			break
+		}
+		nodeNext = node.Next()
+		retrySend(node)
+		node = nodeNext
+	}
+}
+
+func retrySend(node *list.Element) {
+	item := node.Value.(*tWaitItem)
+	t := gGetTime()
+	if t-item.startTime > item.timeoutUs {
+		logWarn("wait ack timeout!task failed!token:%d", item.token)
+		waitItems.Remove(node)
+		if len(item.req) >= gSingleFrameSizeMax {
+			gBlockRemove(item.protocol, item.pipe, item.dstIA, item.code, item.rid, item.token)
+		}
+		item.resp.Error = SystemErrorRxTimeout
+		item.end <- true
+		return
+	}
+
+	// 块传输不用此处重传.块传输模块自己负责
+	if len(item.req) >= gSingleFrameSizeMax {
+		return
+	}
+
+	if t-item.lastRetryTimestamp < int64(gParam.BlockRetryInterval*1000) {
+		return
+	}
+
+	// 重传
+	item.retryNum++
+	if item.retryNum >= gParam.BlockRetryMaxNum {
+		logWarn("retry too many!task failed!token:%d", item.token)
+		waitItems.Remove(node)
+		item.resp.Error = SystemErrorRxTimeout
+		item.end <- true
+		return
+	}
+	item.lastRetryTimestamp = t
+	waitlistSendFrame(item.protocol, item.pipe, item.dstIA, item.code, item.rid, item.token, item.req)
+}
 
 // Call RPC同步调用
 // timeout是超时时间,单位:ms.为0表示不需要应答
@@ -91,22 +163,19 @@ func CallAsync(protocol int, pipe uint64, dstIA uint64, rid int, timeout int, re
 	item.dstIA = dstIA
 	item.rid = rid
 	item.token = token
-	elem := waitItems.PushBack(&item)
+	item.code = code
+
+	item.retryNum = 0
+	item.startTime = gGetTime()
+	item.lastRetryTimestamp = gGetTime()
+	waitItems.PushBack(&item)
 
 	// 等待数据
 	go func() {
 		select {
 		case <-item.end:
 			item.resp.done()
-		case <-time.After(time.Duration(timeout) * time.Millisecond):
-			logWarn("wait ack timeout!token:%d", token)
-			item.resp.Error = SystemErrorRxTimeout
-			item.resp.done()
 		}
-
-		waitItemsMutex.Lock()
-		waitItems.Remove(elem)
-		waitItemsMutex.Unlock()
 	}()
 	return &resp
 }
@@ -156,10 +225,10 @@ func checkNodeAndDealAckFrame(protocol int, pipe uint64, srcIA uint64, frame *tF
 	}
 
 	logInfo("deal ack frame.token:%d", item.token)
+	waitItems.Remove(node)
 	item.resp.Bytes = append(item.resp.Bytes, frame.payload...)
 	item.resp.Error = SystemOK
 	item.end <- true
-	waitItems.Remove(node)
 	return true
 }
 
@@ -193,8 +262,8 @@ func dealRstFrame(protocol int, pipe uint64, srcIA uint64, frame *tFrame, node *
 	}
 	err := int(frame.payload[0])
 	logWarn("deal rst frame.token:%d result:0x%x", item.token, err)
+	waitItems.Remove(node)
 	item.resp.Error = err
 	item.end <- true
-	waitItems.Remove(node)
 	return true
 }
