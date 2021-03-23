@@ -111,6 +111,7 @@ func retrySend(node *list.Element) {
 		return
 	}
 	item.lastRetryTimestamp = t
+	logWarn("retry send.token:%d retry num:%d", item.token, item.retryNum)
 	waitlistSendFrame(item.protocol, item.pipe, item.dstIA, item.code, item.rid, item.token, item.req)
 }
 
