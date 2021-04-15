@@ -203,7 +203,8 @@ func checkNodeAndDealBackFrame(protocol int, pipe uint64, srcIA uint64, frame *t
 	}
 	startOffset := (int(frame.payload[0]) << 8) + int(frame.payload[1])
 	if startOffset >= len(item.data) {
-		logWarn("block rx receive back deal failed!token:%d start offset:%d > data len:%d", item.token, startOffset,
+		// 发送完成
+		logInfo("block tx end.receive back token:%d start offset:%d >= data len:%d", item.token, startOffset,
 			len(item.data))
 		blockTxItems.Remove(node)
 		return true
